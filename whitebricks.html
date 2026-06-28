@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whitebricks Realty — WhatsApp Automation Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: #0b141a;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .page-label {
+    position: fixed;
+    top: 20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #8696a0;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+
+  .phone {
+    width: 380px;
+    height: 780px;
+    background: #000;
+    border-radius: 44px;
+    padding: 12px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+    position: relative;
+  }
+
+  .screen {
+    width: 100%;
+    height: 100%;
+    background: #0b141a;
+    border-radius: 32px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .notch {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 24px;
+    background: #000;
+    border-radius: 0 0 16px 16px;
+    z-index: 100;
+  }
+
+  .statusbar {
+    height: 44px;
+    background: #075E54;
+    flex-shrink: 0;
+  }
+
+  .header {
+    background: #075E54;
+    color: #fff;
+    padding: 8px 14px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .header .back {
+    font-size: 22px;
+    line-height: 1;
+    opacity: 0.9;
+  }
+
+  .header .avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #075E54;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .header .info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header .name {
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header .status {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 1px;
+  }
+
+  .header .icons {
+    display: flex;
+    gap: 18px;
+    font-size: 18px;
+    opacity: 0.95;
+  }
+
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 10px 10px;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,0.015) 1px, transparent 1px),
+      radial-gradient(circle at 70% 60%, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 30px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    scroll-behavior: smooth;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 0; }
+
+  .day-divider {
+    align-self: center;
+    background: #182229;
+    color: #8696a0;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    margin: 8px 0 14px;
+  }
+
+  .msg-row {
+    display: flex;
+    margin-bottom: 2px;
+    opacity: 0;
+    animation: fadeIn 0.35s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-row.in { justify-content: flex-start; }
+  .msg-row.out { justify-content: flex-end; }
+
+  .bubble {
+    max-width: 78%;
+    padding: 7px 9px 8px 9px;
+    border-radius: 8px;
+    font-size: 14.2px;
+    line-height: 1.35;
+    position: relative;
+    box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+  }
+
+  .bubble.in {
+    background: #202c33;
+    color: #e9edef;
+    border-top-left-radius: 0;
+  }
+
+  .bubble.out {
+    background: #005c4b;
+    color: #e9edef;
+    border-top-right-radius: 0;
+  }
+
+  .bubble .time {
+    display: inline-block;
+    font-size: 11px;
+    color: #8696a0;
+    margin-left: 6px;
+    float: right;
+    margin-top: 4px;
+  }
+
+  .bubble .ticks {
+    color: #53bdeb;
+    font-size: 13px;
+    margin-left: 2px;
+  }
+
+  .listing-card {
+    background: #1a2329;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .listing-card .thumb {
+    height: 90px;
+    background: linear-gradient(135deg, #2a3942, #1a2329);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8696a0;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  .listing-card .body {
+    padding: 10px 11px;
+  }
+
+  .listing-card .title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #e9edef;
+    margin-bottom: 4px;
+  }
+
+  .listing-card .meta {
+    font-size: 12.5px;
+    color: #8696a0;
+    line-height: 1.5;
+  }
+
+  .quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 4px 16px;
+    opacity: 0;
+    animation: fadeIn 0.35s ease forwards;
+  }
+
+  .qr-btn {
+    background: #202c33;
+    color: #00a884;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 20px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+
+  .qr-btn:hover { background: #2a3942; }
+  .qr-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .qr-btn.full-width {
+    width: 100%;
+    text-align: center;
+  }
+
+  .typing-indicator {
+    align-self: flex-start;
+    background: #202c33;
+    border-radius: 8px;
+    border-top-left-radius: 0;
+    padding: 10px 14px;
+    display: flex;
+    gap: 4px;
+    margin-bottom: 2px;
+  }
+
+  .typing-indicator span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #8696a0;
+    animation: typingBounce 1.2s infinite ease-in-out;
+  }
+
+  .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .input-bar {
+    background: #1f2c34;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .input-bar .field {
+    flex: 1;
+    background: #2a3942;
+    border-radius: 22px;
+    padding: 9px 16px;
+    color: #8696a0;
+    font-size: 14px;
+  }
+
+  .input-bar .mic {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #00a884;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .calendar-wrap {
+    background: #1a2329;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 4px;
+  }
+
+  .calendar-wrap .cal-title {
+    font-size: 13px;
+    color: #8696a0;
+    margin-bottom: 8px;
+  }
+
+  .date-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .date-btn {
+    background: #202c33;
+    color: #e9edef;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 8px 4px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .date-btn:hover { border-color: #00a884; }
+  .date-btn.selected { background: #00a884; color: #062b24; font-weight: 600; }
+
+  .time-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .time-btn {
+    background: #202c33;
+    color: #e9edef;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 7px 4px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .time-btn:hover { border-color: #00a884; }
+  .time-btn.selected { background: #00a884; color: #062b24; font-weight: 600; }
+
+  .confirm-btn {
+    width: 100%;
+    margin-top: 10px;
+    background: #00a884;
+    color: #062b24;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .confirm-btn:disabled {
+    background: #2a3942;
+    color: #8696a0;
+    cursor: default;
+  }
+
+  .booking-confirmed {
+    background: #1a2329;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 4px;
+    border-left: 3px solid #00a884;
+  }
+
+  .booking-confirmed .bc-title {
+    color: #00d9a5;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .booking-confirmed .bc-row {
+    font-size: 13px;
+    color: #d1d7db;
+    margin-bottom: 3px;
+  }
+
+  .booking-confirmed .bc-link {
+    display: inline-block;
+    margin-top: 8px;
+    background: #075E54;
+    color: #fff;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+
+  .restart-banner {
+    text-align: center;
+    margin: 16px 4px;
+    opacity: 0;
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  .restart-banner button {
+    background: transparent;
+    border: 1px solid #2a3942;
+    color: #8696a0;
+    padding: 8px 18px;
+    border-radius: 18px;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+
+  .demo-tag {
+    position: absolute;
+    top: 60px;
+    right: -8px;
+    background: #d85a30;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    transform: rotate(4deg);
+    z-index: 50;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+</style>
+</head>
+<body>
+
+<div class="page-label">Accord — WhatsApp automation walkthrough · Whitebricks Realty</div>
+
+<div class="phone">
+  <div class="screen">
+    <div class="demo-tag">DEMO FLOW</div>
+    <div class="notch"></div>
+    <div class="statusbar"></div>
+    <div class="header">
+      <div class="back">&#8249;</div>
+      <div class="avatar">WB</div>
+      <div class="info">
+        <div class="name">Whitebricks Realty</div>
+        <div class="status" id="header-status">online</div>
+      </div>
+      <div class="icons">
+        <span>&#128222;</span>
+        <span>&#8942;</span>
+      </div>
+    </div>
+    <div class="chat-area" id="chat-area">
+      <div class="day-divider">Today</div>
+    </div>
+    <div class="input-bar">
+      <div class="field">Message</div>
+      <div class="mic">&#127908;</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const chatArea = document.getElementById('chat-area');
+const headerStatus = document.getElementById('header-status');
+
+const LISTINGS = {
+  residential: [
+    { name: "Vanmaya By Agrante", meta: "2 &amp; 3 BHK &middot; 6.66 Acres &middot; 404 Units<br>Dwarka Expressway, Sector-106, Gurugram" },
+    { name: "Hero Homes 104", meta: "2833&ndash;3500 Sq Ft &middot; 3 &amp; 4 BHK<br>2 Towers &middot; Air-Conditioned Residences &middot; Dwarka Expressway" },
+    { name: "Sobha Sector 36", meta: "1200&ndash;2200 Sq Ft &middot; 2, 3 &amp; 4 BHK<br>3.5 Acres &middot; Clubhouse &middot; Sector-36, Greater Noida" }
+  ],
+  commercial: [
+    { name: "The Stadium", meta: "50.4 Acre Land Parcel &middot; 42 Restaurants<br>Commercial Spaces &middot; Multiplex &middot; Showroom &middot; Sector 19B, Dwarka" },
+    { name: "M3M Capital Walk", meta: "Retail &amp; Office Spaces &middot; 350&ndash;1800 Sq Ft<br>Food Court &middot; High Street Frontage &middot; Sector 113, Gurugram" },
+    { name: "AIPL Business Club", meta: "Managed Office Spaces &middot; 500&ndash;5000 Sq Ft<br>Co-working Floors &middot; Cafeteria &middot; Sector 62, Gurugram" }
+  ],
+  resale: [
+    { name: "DLF Phase 5 — 4BHK Villa", meta: "4500 Sq Ft &middot; Independent Villa<br>Private Garden &middot; 12 Years Old &middot; DLF Phase 5, Gurugram" },
+    { name: "Sobha City — 3BHK", meta: "1850 Sq Ft &middot; 3 BHK &middot; Ready to Move<br>Park Facing &middot; Sector 108, Gurugram" },
+    { name: "ATS Tourmaline — 3BHK", meta: "2100 Sq Ft &middot; 3 BHK &middot; 5 Years Old<br>Clubhouse Access &middot; Sector 109, Gurugram" }
+  ],
+  plots: [
+    { name: "Roots Courtyard 2", meta: "12.447 Acres &middot; 197 Residential Plots<br>147&ndash;179 Sq Yards &middot; 200 Acre Park &middot; Sector-95A, Gurugram" },
+    { name: "Adani M2K Plots", meta: "1100&ndash;2200 Sq Ft Plots<br>Kids Play Area &middot; Jogging Track &middot; 24x7 Security &middot; Dwarka Expressway" },
+    { name: "G99 Uppal Plots", meta: "1100&ndash;2200 Sq Ft Plots<br>Kids Play Area &middot; Jogging Track &middot; 24x7 Security &middot; Dwarka Expressway" }
+  ]
+};
+
+const CATEGORY_LABELS = {
+  residential: "Residential",
+  commercial: "Commercial",
+  resale: "Resale",
+  plots: "Plots"
+};
+
+let msgCounter = 0;
+
+function scrollDown() {
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(' ', '');
+}
+
+function addBubble(text, dir, withTicks) {
+  return new Promise(resolve => {
+    const row = document.createElement('div');
+    row.className = 'msg-row ' + dir;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + dir;
+    const ticks = dir === 'out' ? '<span class="ticks">&#10003;&#10003;</span>' : '';
+    bubble.innerHTML = text + '<span class="time">' + timeNow() + ticks + '</span>';
+    row.appendChild(bubble);
+    chatArea.appendChild(row);
+    scrollDown();
+    setTimeout(resolve, 100);
+  });
+}
+
+function showTyping() {
+  return new Promise(resolve => {
+    const indicator = document.createElement('div');
+    indicator.className = 'typing-indicator';
+    indicator.id = 'typing-now';
+    indicator.innerHTML = '<span></span><span></span><span></span>';
+    chatArea.appendChild(indicator);
+    scrollDown();
+    setTimeout(() => {
+      const el = document.getElementById('typing-now');
+      if (el) el.remove();
+      resolve();
+    }, 900);
+  });
+}
+
+function addListingCard(listing, onEnquire) {
+  const row = document.createElement('div');
+  row.className = 'msg-row in';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble in';
+  bubble.style.padding = '6px';
+  bubble.style.maxWidth = '82%';
+  bubble.innerHTML =
+    '<div class="listing-card">' +
+      '<div class="thumb">PROPERTY IMAGE</div>' +
+      '<div class="body">' +
+        '<div class="title">' + listing.name + '</div>' +
+        '<div class="meta">' + listing.meta + '</div>' +
+      '</div>' +
+    '</div>';
+  row.appendChild(bubble);
+  chatArea.appendChild(row);
+
+  const btnWrap = document.createElement('div');
+  btnWrap.className = 'quick-replies';
+  btnWrap.style.marginTop = '-10px';
+  btnWrap.style.marginBottom = '10px';
+  const btn = document.createElement('button');
+  btn.className = 'qr-btn full-width';
+  btn.textContent = 'Enquire with a realtor — ' + listing.name;
+  btn.onclick = () => {
+    chatArea.querySelectorAll('.qr-btn').forEach(b => b.disabled = true);
+    chatArea.querySelectorAll('.quick-replies').forEach(w => w.style.opacity = '0.5');
+    onEnquire(listing.name);
+  };
+  btnWrap.appendChild(btn);
+  chatArea.appendChild(btnWrap);
+  scrollDown();
+}
+
+function addQuickReplies(options, onSelect, fullWidth) {
+  return new Promise(resolve => {
+    const wrap = document.createElement('div');
+    wrap.className = 'quick-replies';
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'qr-btn' + (fullWidth ? ' full-width' : '');
+      btn.textContent = opt.label;
+      btn.onclick = () => {
+        Array.from(wrap.children).forEach(c => c.disabled = true);
+        wrap.style.opacity = '0.5';
+        resolve(opt.value);
+      };
+      wrap.appendChild(btn);
+    });
+    chatArea.appendChild(wrap);
+    scrollDown();
+  });
+}
+
+async function userSays(text) {
+  await addBubble(text, 'out');
+  await new Promise(r => setTimeout(r, 250));
+}
+
+async function botSays(text) {
+  await showTyping();
+  await addBubble(text, 'in');
+}
+
+async function runFlow() {
+  await new Promise(r => setTimeout(r, 400));
+
+  await botSays('Welcome to <b>Whitebricks Realty Private Limited</b>. What would you like to enquire about?');
+
+  const category = await addQuickReplies([
+    { label: 'Residential', value: 'residential' },
+    { label: 'Commercial', value: 'commercial' },
+    { label: 'Resale', value: 'resale' },
+    { label: 'Plots', value: 'plots' }
+  ]);
+
+  await userSays(CATEGORY_LABELS[category]);
+  await new Promise(r => setTimeout(r, 200));
+  await showTyping();
+
+  await botSays('Here are our current ' + CATEGORY_LABELS[category].toLowerCase() + ' listings:');
+
+  const listings = LISTINGS[category];
+  const selectedProperty = await new Promise(resolve => {
+    let revealed = 0;
+    function revealNext() {
+      if (revealed >= listings.length) return;
+      const listing = listings[revealed];
+      revealed++;
+      addListingCard(listing, (propertyName) => resolve(propertyName));
+      if (revealed < listings.length) {
+        setTimeout(revealNext, 350);
+      }
+    }
+    setTimeout(revealNext, 350);
+  });
+
+  await new Promise(r => setTimeout(r, 200));
+  await userSays('Enquire with a realtor — ' + selectedProperty);
+  await new Promise(r => setTimeout(r, 200));
+
+  await botSays('Great choice. We&#8217;ve logged your interest in <b>' + selectedProperty + '</b> and tagged this enquiry for our team. Let&#8217;s get a call scheduled &mdash; pick a date that works for you:');
+
+  await renderCalendar(selectedProperty);
+}
+
+function renderCalendar(propertyName) {
+  return new Promise(resolve => {
+    const row = document.createElement('div');
+    row.className = 'msg-row in';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble in';
+    bubble.style.padding = '6px';
+    bubble.style.maxWidth = '85%';
+
+    const dates = [
+      { d: 'Mon', n: '30' }, { d: 'Tue', n: '01' }, { d: 'Wed', n: '02' }, { d: 'Thu', n: '03' }
+    ];
+    const times = ['10:00 AM', '11:30 AM', '2:00 PM', '3:30 PM', '4:30 PM', '6:00 PM'];
+
+    let selectedDate = null;
+    let selectedTime = null;
+
+    bubble.innerHTML =
+      '<div class="calendar-wrap">' +
+        '<div class="cal-title">Choose date</div>' +
+        '<div class="date-grid" id="date-grid"></div>' +
+        '<div class="cal-title" id="time-label" style="display:none; margin-top:6px;">Choose time</div>' +
+        '<div class="time-grid" id="time-grid" style="display:none;"></div>' +
+        '<button class="confirm-btn" id="confirm-booking" disabled>Confirm booking</button>' +
+      '</div>';
+
+    row.appendChild(bubble);
+    chatArea.appendChild(row);
+    scrollDown();
+
+    const dateGrid = bubble.querySelector('#date-grid');
+    const timeGrid = bubble.querySelector('#time-grid');
+    const timeLabel = bubble.querySelector('#time-label');
+    const confirmBtn = bubble.querySelector('#confirm-booking');
+
+    dates.forEach(dt => {
+      const btn = document.createElement('button');
+      btn.className = 'date-btn';
+      btn.innerHTML = dt.d + '<br>' + dt.n;
+      btn.onclick = () => {
+        Array.from(dateGrid.children).forEach(c => c.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedDate = dt.d + ' ' + dt.n;
+        timeLabel.style.display = 'block';
+        timeGrid.style.display = 'grid';
+        scrollDown();
+      };
+      dateGrid.appendChild(btn);
+    });
+
+    times.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'time-btn';
+      btn.textContent = t;
+      btn.onclick = () => {
+        Array.from(timeGrid.children).forEach(c => c.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedTime = t;
+        confirmBtn.disabled = false;
+      };
+      timeGrid.appendChild(btn);
+    });
+
+    confirmBtn.onclick = async () => {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Booking...';
+      bubble.querySelectorAll('button').forEach(b => b.disabled = true);
+      await new Promise(r => setTimeout(r, 600));
+      resolve({ date: selectedDate, time: selectedTime });
+      await showBookingConfirmation(selectedDate, selectedTime, propertyName);
+    };
+  });
+}
+
+async function showBookingConfirmation(date, time, propertyName) {
+  await new Promise(r => setTimeout(r, 300));
+  await showTyping();
+
+  const row = document.createElement('div');
+  row.className = 'msg-row in';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble in';
+  bubble.style.padding = '6px';
+  bubble.style.maxWidth = '85%';
+  bubble.innerHTML =
+    '<div class="booking-confirmed">' +
+      '<div class="bc-title">&#10003; Call scheduled</div>' +
+      '<div class="bc-row"><b>' + date + ', ' + time + '</b></div>' +
+      '<div class="bc-row">with the Whitebricks Realty team</div>' +
+      '<div class="bc-row" style="margin-top:6px; color:#8696a0;">Lead tagged &middot; ' + propertyName + '</div>' +
+      '<a class="bc-link" href="#">meet.google.com/wbr-call-demo</a>' +
+    '</div>';
+  row.appendChild(bubble);
+  chatArea.appendChild(row);
+  scrollDown();
+
+  await new Promise(r => setTimeout(r, 400));
+  await botSays('We&#8217;ll see you then. Reply here anytime if your plans change.');
+
+  const banner = document.createElement('div');
+  banner.className = 'restart-banner';
+  banner.innerHTML = '<button onclick="restartDemo()">&#8635; Replay flow</button>';
+  chatArea.appendChild(banner);
+  scrollDown();
+}
+
+function restartDemo() {
+  chatArea.innerHTML = '<div class="day-divider">Today</div>';
+  runFlow();
+}
+
+runFlow();
+</script>
+
+</body>
+</html>
